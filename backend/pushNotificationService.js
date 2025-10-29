@@ -76,7 +76,7 @@ async function monitorGasLeaksAndNotify() {
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: "https://your-project-id.firebaseio.com",
+    databaseURL: "https://smart-gas-detector-98d0c-default-rtdb.firebaseio.com",
   });
 
   const db = admin.database();

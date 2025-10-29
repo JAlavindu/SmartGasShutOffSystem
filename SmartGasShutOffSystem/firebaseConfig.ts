@@ -5,13 +5,13 @@ import { getMessaging, isSupported } from "firebase/messaging";
 // Replace with your Firebase project configuration
 // Get this from Firebase Console -> Project Settings -> General -> Your apps
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  apiKey: "AIzaSyBCkgUksQoOaZA5IbryXZvAdlnffm2NI4U",
+  authDomain: "smart-gas-detector-98d0c.firebaseapp.com",
+  databaseURL: "https://smart-gas-detector-98d0c-default-rtdb.firebaseio.com",
+  projectId: "smart-gas-detector-98d0c",
+  storageBucket: "smart-gas-detector-98d0c.firebasestorage.app",
+  messagingSenderId: "91556823235",
+  appId: "1:91556823235:web:c62b26559d6b6d60af6276",
 };
 
 // Initialize Firebase

@@ -4,6 +4,15 @@
  * 
  * This code reads gas sensor data, sends it to Firebase Realtime Database,
  * and controls a solenoid valve to shut off gas supply when leak is detected.
+ * 
+ * SETUP INSTRUCTIONS:
+ * 1. Install required libraries in Arduino IDE:
+ *    - Firebase ESP Client by Mobizt
+ *    - WiFi library (built-in for ESP32/ESP8266)
+ * 2. Update WiFi credentials below (WIFI_SSID and WIFI_PASSWORD)
+ * 3. Firebase credentials are already configured
+ * 4. Upload to ESP32/ESP8266
+ * 5. Open Serial Monitor (115200 baud) to see status
  */
 
 #include <WiFi.h>
@@ -12,12 +21,12 @@
 #include "addons/RTDBHelper.h"
 
 // WiFi credentials
-#define WIFI_SSID "Your_WiFi_SSID"
-#define WIFI_PASSWORD "Your_WiFi_Password"
+#define WIFI_SSID "Your_WiFi_SSID"  // TODO: Replace with your WiFi SSID
+#define WIFI_PASSWORD "Your_WiFi_Password"  // TODO: Replace with your WiFi password
 
-// Firebase credentials
-#define API_KEY "Your_Firebase_API_Key"
-#define DATABASE_URL "https://your-project-id.firebaseio.com/"
+// Firebase credentials - From your firebaseConfig.ts
+#define API_KEY "AIzaSyBCkgUksQoOaZA5IbryXZvAdlnffm2NI4U"
+#define DATABASE_URL "https://smart-gas-detector-98d0c-default-rtdb.firebaseio.com/"
 
 // Pin definitions
 #define GAS_SENSOR_PIN 34       // Analog pin for gas sensor (MQ-2/MQ-5)
