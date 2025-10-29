@@ -1,13 +1,17 @@
-import { Image } from "expo-image";
 import * as Notifications from "expo-notifications";
 import { useEffect, useRef, useState } from "react";
-import { Alert, Platform, StyleSheet } from "react-native";
-
-import { HelloWave } from "@/components/hello-wave";
-import ParallaxScrollView from "@/components/parallax-scroll-view";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
-import { Link } from "expo-router";
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  View,
+  Text,
+  Dimensions,
+  Animated,
+  TouchableOpacity,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 
 import {
   subscribeToGasLeakEvents,
@@ -19,6 +23,8 @@ import {
   registerForPushNotificationsAsync,
 } from "@/utils/notifications";
 
+const { width } = Dimensions.get("window");
+
 export default function HomeScreen() {
   const [expoPushToken, setExpoPushToken] = useState<string>("");
   const [gasStatus, setGasStatus] = useState<GasLeakData | null>(null);
@@ -26,6 +32,45 @@ export default function HomeScreen() {
   const notificationListener = useRef<Notifications.Subscription | null>(null);
   const responseListener = useRef<Notifications.Subscription | null>(null);
   const gasLeakUnsubscribe = useRef<(() => void) | null>(null);
+
+  // Animation values
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+
+  // Pulse animation for danger state
+  useEffect(() => {
+    if (gasStatus?.isLeakDetected) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.1,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [gasStatus?.isLeakDetected]);
+
+  // Rotate animation for loading
+  useEffect(() => {
+    if (isLoading) {
+      Animated.loop(
+        Animated.timing(rotateAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        })
+      ).start();
+    }
+  }, [isLoading]);
 
   useEffect(() => {
     // Register for push notifications
@@ -98,179 +143,393 @@ export default function HomeScreen() {
     };
   }, []);
 
+  const spin = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
+
+  const getStatusColor = (): [string, string] => {
+    if (isLoading) return ["#6B7280", "#4B5563"];
+    return gasStatus?.isLeakDetected
+      ? ["#EF4444", "#DC2626"]
+      : ["#10B981", "#059669"];
+  };
+
+  const getStatusIcon = () => {
+    if (isLoading) return "⏳";
+    return gasStatus?.isLeakDetected ? "🚨" : "✅";
+  };
+
+  const formatTime = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
-        />
-      }
-    >
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Smart Gas Detector</ThemedText>
-        <HelloWave />
-      </ThemedView>
-
-      {/* Gas Status Display */}
-      <ThemedView
-        style={[
-          styles.statusContainer,
+    <View style={styles.container}>
+      <LinearGradient
+        colors={
           gasStatus?.isLeakDetected
-            ? styles.dangerContainer
-            : styles.safeContainer,
-        ]}
+            ? ["#FEE2E2", "#FECACA"]
+            : ["#E0F2FE", "#BAE6FD"]
+        }
+        style={styles.gradient}
       >
-        <ThemedText type="subtitle" style={styles.statusTitle}>
-          {isLoading
-            ? "Loading..."
-            : gasStatus?.isLeakDetected
-            ? "⚠️ GAS LEAK DETECTED!"
-            : "✓ System Normal"}
-        </ThemedText>
-        {gasStatus && !isLoading && (
-          <>
-            <ThemedText style={styles.statusText}>
-              Gas Level: {gasStatus.gasLevel} ppm
-            </ThemedText>
-            <ThemedText style={styles.statusText}>
-              Status:{" "}
-              {gasStatus.isLeakDetected ? "DANGER - Gas Shut Off" : "Safe"}
-            </ThemedText>
-            {gasStatus.location && (
-              <ThemedText style={styles.statusText}>
-                Location: {gasStatus.location}
-              </ThemedText>
-            )}
-            <ThemedText style={styles.statusText}>
-              Last Updated: {new Date(gasStatus.timestamp).toLocaleString()}
-            </ThemedText>
-          </>
-        )}
-      </ThemedView>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Smart Gas</Text>
+            <Text style={styles.headerSubtitle}>Detector System</Text>
+          </View>
 
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Push Notifications</ThemedText>
-        <ThemedText>
-          {expoPushToken
-            ? `✓ Notifications enabled. You&apos;ll be alerted if gas leak is detected.`
-            : "Setting up notifications..."}
-        </ThemedText>
-      </ThemedView>
+          {/* Main Status Card */}
+          <Animated.View
+            style={[styles.mainCard, { transform: [{ scale: pulseAnim }] }]}
+          >
+            <LinearGradient
+              colors={getStatusColor()}
+              style={styles.statusGradient}
+            >
+              <View style={styles.statusIconContainer}>
+                {isLoading ? (
+                  <Animated.Text
+                    style={[
+                      styles.statusIcon,
+                      { transform: [{ rotate: spin }] },
+                    ]}
+                  >
+                    ⚙️
+                  </Animated.Text>
+                ) : (
+                  <Text style={styles.statusIcon}>{getStatusIcon()}</Text>
+                )}
+              </View>
 
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">How It Works</ThemedText>
-        <ThemedText>
-          The system monitors gas levels in real-time using Firebase. When a gas
-          leak is detected, you&apos;ll receive an immediate push notification,
-          and the gas supply will be automatically shut off.
-        </ThemedText>
-      </ThemedView>
+              <Text style={styles.statusTitle}>
+                {isLoading
+                  ? "Connecting..."
+                  : gasStatus?.isLeakDetected
+                  ? "GAS LEAK DETECTED!"
+                  : "System Normal"}
+              </Text>
 
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">hi!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit{" "}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText>{" "}
-          to see changes. Press{" "}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: "cmd + d",
-              android: "cmd + m",
-              web: "F12",
-            })}
-          </ThemedText>{" "}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction
-              title="Action"
-              icon="cube"
-              onPress={() => alert("Action pressed")}
-            />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert("Share pressed")}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert("Delete pressed")}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+              {!isLoading && gasStatus && (
+                <>
+                  <View style={styles.gasLevelContainer}>
+                    <Text style={styles.gasLevelValue}>
+                      {gasStatus.gasLevel}
+                    </Text>
+                    <Text style={styles.gasLevelUnit}>ppm</Text>
+                  </View>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">
-            npm run reset-project
-          </ThemedText>{" "}
-          to get a fresh <ThemedText type="defaultSemiBold">app</ThemedText>{" "}
-          directory. This will move the current{" "}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{" "}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+                  <View style={styles.statusBadge}>
+                    <Text style={styles.statusBadgeText}>
+                      {gasStatus.isLeakDetected
+                        ? "⛔ Gas Shut Off"
+                        : "🟢 Operating"}
+                    </Text>
+                  </View>
+                </>
+              )}
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Info Cards */}
+          {!isLoading && gasStatus && (
+            <>
+              {/* Location Card */}
+              <View style={styles.infoCard}>
+                <View style={styles.infoCardHeader}>
+                  <Text style={styles.infoCardIcon}>📍</Text>
+                  <Text style={styles.infoCardTitle}>Location</Text>
+                </View>
+                <Text style={styles.infoCardValue}>
+                  {gasStatus.location || "Unknown"}
+                </Text>
+              </View>
+
+              {/* Last Update Card */}
+              <View style={styles.infoCard}>
+                <View style={styles.infoCardHeader}>
+                  <Text style={styles.infoCardIcon}>🕒</Text>
+                  <Text style={styles.infoCardTitle}>Last Update</Text>
+                </View>
+                <Text style={styles.infoCardValue}>
+                  {formatTime(gasStatus.timestamp)}
+                </Text>
+                <Text style={styles.infoCardSubValue}>
+                  {new Date(gasStatus.timestamp).toLocaleDateString()}
+                </Text>
+              </View>
+
+              {/* Notifications Card */}
+              <View style={styles.infoCard}>
+                <View style={styles.infoCardHeader}>
+                  <Text style={styles.infoCardIcon}>🔔</Text>
+                  <Text style={styles.infoCardTitle}>Notifications</Text>
+                </View>
+                <Text style={styles.infoCardValue}>
+                  {expoPushToken ? "Enabled" : "Setting up..."}
+                </Text>
+                {expoPushToken && (
+                  <Text style={styles.infoCardSubValue}>
+                    Alerts active • Real-time monitoring
+                  </Text>
+                )}
+              </View>
+
+              {/* Safety Info */}
+              <View style={styles.safetyCard}>
+                <Text style={styles.safetyTitle}>🛡️ Safety Features</Text>
+                <View style={styles.safetyList}>
+                  <Text style={styles.safetyItem}>
+                    ✓ Real-time gas level monitoring
+                  </Text>
+                  <Text style={styles.safetyItem}>
+                    ✓ Automatic gas shut-off valve
+                  </Text>
+                  <Text style={styles.safetyItem}>
+                    ✓ Instant push notifications
+                  </Text>
+                  <Text style={styles.safetyItem}>
+                    ✓ Cloud-based data logging
+                  </Text>
+                </View>
+              </View>
+
+              {/* Emergency Button */}
+              {gasStatus.isLeakDetected && (
+                <TouchableOpacity
+                  style={styles.emergencyButton}
+                  onPress={() =>
+                    Alert.alert(
+                      "Emergency Services",
+                      "This will call emergency services. Make sure you are in a safe location.",
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Call 911",
+                          onPress: () => console.log("Emergency called"),
+                          style: "destructive",
+                        },
+                      ]
+                    )
+                  }
+                >
+                  <LinearGradient
+                    colors={["#DC2626", "#991B1B"]}
+                    style={styles.emergencyGradient}
+                  >
+                    <Text style={styles.emergencyButtonText}>
+                      🚨 Call Emergency Services
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              )}
+            </>
+          )}
+
+          {/* Footer */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Smart Gas Detector v1.0</Text>
+            <Text style={styles.footerSubtext}>
+              Monitoring your safety 24/7
+            </Text>
+          </View>
+        </ScrollView>
+      </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: "row",
+  container: {
+    flex: 1,
+  },
+  gradient: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingTop: 60,
+  },
+  header: {
+    marginBottom: 30,
     alignItems: "center",
-    gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  headerTitle: {
+    fontSize: 36,
+    fontWeight: "bold",
+    color: "#1F2937",
+    letterSpacing: -1,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: "absolute",
+  headerSubtitle: {
+    fontSize: 18,
+    color: "#6B7280",
+    marginTop: 4,
+    fontWeight: "600",
   },
-  statusContainer: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
+  mainCard: {
+    marginBottom: 20,
+    borderRadius: 24,
+    overflow: "hidden",
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
-  safeContainer: {
-    backgroundColor: "#d4edda",
+  statusGradient: {
+    padding: 32,
+    alignItems: "center",
   },
-  dangerContainer: {
-    backgroundColor: "#f8d7da",
+  statusIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  statusIcon: {
+    fontSize: 50,
   },
   statusTitle: {
+    fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 8,
+    color: "#FFFFFF",
+    textAlign: "center",
+    marginBottom: 20,
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
-  statusText: {
+  gasLevelContainer: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    marginBottom: 16,
+  },
+  gasLevelValue: {
+    fontSize: 64,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  gasLevelUnit: {
+    fontSize: 24,
+    color: "#FFFFFF",
+    marginLeft: 8,
+    opacity: 0.9,
+  },
+  statusBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  statusBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  infoCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  infoCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  infoCardIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  infoCardTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#6B7280",
+  },
+  infoCardValue: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#1F2937",
+    marginBottom: 4,
+  },
+  infoCardSubValue: {
     fontSize: 14,
-    marginVertical: 4,
+    color: "#9CA3AF",
+  },
+  safetyCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: "#10B981",
+  },
+  safetyTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#1F2937",
+    marginBottom: 16,
+  },
+  safetyList: {
+    gap: 10,
+  },
+  safetyItem: {
+    fontSize: 15,
+    color: "#4B5563",
+    lineHeight: 22,
+  },
+  emergencyButton: {
+    marginBottom: 16,
+    borderRadius: 16,
+    overflow: "hidden",
+    elevation: 4,
+    shadowColor: "#DC2626",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  emergencyGradient: {
+    padding: 18,
+    alignItems: "center",
+  },
+  emergencyButtonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  footer: {
+    alignItems: "center",
+    paddingVertical: 30,
+  },
+  footerText: {
+    fontSize: 14,
+    color: "#6B7280",
+    fontWeight: "600",
+  },
+  footerSubtext: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    marginTop: 4,
   },
 });

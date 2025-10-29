@@ -10,8 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.smartgasshutoffsystem",
-      "googleServicesFile": "./GoogleService-Info.plist"
+      "bundleIdentifier": "com.smartgasshutoffsystem"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,8 +22,10 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.smartgasshutoffsystem",
-      "googleServicesFile": "./google-services.json",
-      "permissions": ["RECEIVE_BOOT_COMPLETED", "VIBRATE"]
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
     },
     "web": {
       "output": "static",
@@ -52,6 +53,13 @@
     "updates": {
       "enabled": false,
       "fallbackToCacheTimeout": 0
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "489afd77-b15a-4885-86cf-6ff9c52be41c"
+      }
+    },
+    "owner": "lavindu156"
   }
 }
