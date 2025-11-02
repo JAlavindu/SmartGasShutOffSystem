@@ -17,8 +17,9 @@
 #include <ArduinoJson.h>  // Install this: Sketch -> Include Library -> Manage Libraries -> ArduinoJson
 
 // WiFi credentials
-#define WIFI_SSID "SLT_FIBER"  // TODO: Replace with your WiFi SSID
-#define WIFI_PASSWORD "Home@1234"  // TODO: Replace with your WiFi password
+// WiFi credentials moved to external, git-ignored file for local development
+// Create `credentials.h` next to this sketch and add your credentials there.
+#include "credentials.h"  // See arduino/gas_detector_esp32_httpclient/credentials.h (gitignored)
 
 // Firebase credentials - From your firebaseConfig.ts
 #define API_KEY "AIzaSyBCkgUksQoOaZA5IbryXZvAdlnffm2NI4U"
@@ -64,6 +65,14 @@ void setup() {
   Serial.print("Password length: ");
   Serial.println(strlen(WIFI_PASSWORD));
   
+  // Password length printed as a debug; empty means credentials.h not filled
+  if (strlen(WIFI_SSID) == 0 || strlen(WIFI_PASSWORD) == 0) {
+    Serial.println("\n✗ WIFI_SSID and/or WIFI_PASSWORD are empty.\nPlease create 'credentials.h' and set your WiFi credentials before proceeding.\nDevice will halt.");
+    while (true) {
+      delay(1000);
+    }
+  }
+
   WiFi.mode(WIFI_STA);  // Set to Station mode
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   

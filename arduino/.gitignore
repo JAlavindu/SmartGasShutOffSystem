@@ -1,0 +1,12 @@
+# Arduino local secrets
+**/credentials.h
+
+# Build and temp files
+*.bin
+*.elf
+*.gz
+*.out
+
+# OS files
+.DS_Store
+Thumbs.db
