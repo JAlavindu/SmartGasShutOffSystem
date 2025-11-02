@@ -131,8 +131,9 @@ This will monitor Firebase for gas leak events and send notifications automatica
 
 Install these libraries via Arduino Library Manager:
 
-- `Firebase ESP Client` by Mobizt
-- `WiFi` (built-in for ESP32)
+- `ArduinoJson` by Benoit Blanchon (for HTTPClient version)
+- `HTTPClient` (built-in for ESP32)
+- **Note:** Firebase ESP Client is deprecated. Use the new HTTPClient version instead.
 
 ### 4.2 Configure Arduino Code
 
