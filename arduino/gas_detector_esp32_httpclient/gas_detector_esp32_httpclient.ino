@@ -36,7 +36,7 @@ String firebaseFullURL = String(DATABASE_URL) + firebasePath;
 #define LED_PIN 27              // Digital pin for LED indicator
 
 // Gas detection threshold (adjust based on your sensor calibration)
-#define GAS_THRESHOLD 400       // ppm
+#define GAS_THRESHOLD 300       // ppm
 
 // Variables
 unsigned long sendDataPrevMillis = 0;
