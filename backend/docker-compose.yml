@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: smart-gas-backend
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      - NODE_ENV=production
+      - FIREBASE_DATABASE_URL=https://smart-gas-detector-98d0c-default-rtdb.firebaseio.com
+    
+    # Mount service account key as a secret (recommended approach)
+    # This keeps the key out of the image and git repo
+    volumes:
+      - ./serviceAccountKey.json:/app/serviceAccountKey.json:ro
+    
+    # Optional: Add logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Health check (optional - requires adding HTTP endpoint)
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    
+    # Network (if needed for other services)
+    # networks:
+    #   - smart-gas-network
+
+# networks:
+#   smart-gas-network:
+#     driver: bridge
